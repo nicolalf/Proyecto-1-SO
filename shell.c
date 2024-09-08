@@ -16,54 +16,50 @@ void pipes(char **a1, char **a2)
 
     // Se podria crear una funcion para poder saber si se pudo realizar el pipe correctamente
     pipe(f_des);
-    if (pid1 == 0 || pid2 == 0)
-    {
-        pid1 = fork();
 
-        if (pid1 == 0)
+    pid1 = fork();
+
+    if (pid1 == 0)
+    {
+        close(f_des[READ]); // Cerramos la parte de lectura para el pipe
+        dup2(f_des[WRITE], STDOUT_FILENO);
+        close(f_des[WRITE]); // Cerramos la parte de escritura luego ya ocupado
+        // Luego verificamos si es se pudo ejecutar el comando de entrada
+        if (execvp(a1[0], a1) < 0)
         {
-            close(f_des[READ]); // Cerramos la parte de lectura para el pipe
-            dup2(f_des[WRITE], STDOUT_FILENO);
-            close(f_des[WRITE]); // Cerramos la parte de escritura luego ya ocupado
-            // Luego verificamos si es se pudo ejecutar el comando de entrada
-            if (execvp(a1[0], a1) < 0)
-            {
-                printf("Error al ejecutar el comando \n");
-                exit(1);
-            }
-        }
-        else if (pid1 < 0)
-        {
-            printf("Error al crear el 1er hijo");
+            printf("Error al ejecutar el comando \n");
             exit(1);
         }
-        close(f_des[WRITE]); // Cerraremos el descriptor del padre ya que no lo necesitamos
-        pid2 = fork();
+    }
+    else if (pid1 < 0)
+    {
+        printf("Error al crear el 1er hijo");
+        exit(1);
+    }
+    pid2 = fork();
 
-        if (pid2 == 0)
+    if (pid2 == 0)
+    {
+        close(f_des[WRITE]); // Cerramos la parte de escritura para el pipe
+        dup2(f_des[READ], STDIN_FILENO);
+        close(f_des[READ]); // Cerramos la parte de lectura luego ya ocupado
+        // Luego verificamos si es se pudo ejecutar el comando de entrada
+        if (execvp(a2[0], a2) < 0)
         {
-            close(f_des[WRITE]); // Cerramos la parte de escritura para el pipe
-            dup2(f_des[READ], STDIN_FILENO);
-            close(f_des[READ]); // Cerramos la parte de lectura luego ya ocupado
-            // Luego verificamos si es se pudo ejecutar el comando de entrada
-            if (execvp(a2[0], a2) < 0)
-            {
-                printf("Error al ejecutar el comando \n");
-                exit(1);
-            }
-        }
-        else if (pid2 < 0)
-        {
-            printf("Error al crear el 2do hijo");
+            printf("Error al ejecutar el comando \n");
             exit(1);
         }
-        close(f_des[READ]); // Cerraremos la parte de lectura para el pipe del padre
     }
-    else
+    else if (pid2 < 0)
     {
-        wait(NULL); // Para que se espere a que se termine el primer hijo
-        wait(NULL); // Para que se espere a que se termine el segundo hijo
+        printf("Error al crear el 2do hijo");
+        exit(1);
     }
+    close(f_des[READ]);  // Cerraremos el descriptor del padre ya que no lo necesitamos
+    close(f_des[WRITE]); // Cerraremos la parte de lectura para el pipe del padre
+
+    wait(NULL); // Para que se espere a que se termine el primer hijo
+    wait(NULL); // Para que se espere a que se termine el segundo hijo
 }
 // Creamos la funcion para mostrar el prompt y leer el comando que queremos
 void visualizar_leer(char *comando)
@@ -88,8 +84,8 @@ void parsear(char *comando, char **argumentos)
         argumentos[i++] = token;
         token = strtok(NULL, " "); // Con esto me permite obtener los fragmentos siguientes (tokens), y que con esto me permite seguir almancenando mis fragmentos
     } while (token != NULL);
-    if (sizeof(argumentos) == i)
-        argumentos[i] = NULL; // Cuando no se siga escribiendo un comando terminamos con un NULL
+    // if (sizeof(argumentos) == i)
+    argumentos[i] = NULL; // Cuando no se siga escribiendo un comando terminamos con un NULL
 }
 
 // Para visualizar los argumentos que hay dentro del arreglo
@@ -129,7 +125,7 @@ int main()
 {
     char comando[1024];
     char *argumentos[1024];
-    int estado;
+    // int estado;
     while (1)
     {
         visualizar_leer(comando);
@@ -142,11 +138,43 @@ int main()
         {
             break;
         }
+        // char *found_p;// Variable que me permitira saber si es que tengo un '|'
 
-        parsear(comando, argumentos);
+        char *found_p;
+
+        // printf("%s ", found_p);
+        for (int i = 0; i < strlen(comando); i++)
+        {
+            if (comando[i] == '|')
+            {
+                found_p = &comando[i];
+                break;
+            }
+        }
+        if (found_p != NULL)
+        {
+            // continue;
+            //  De esta forma divimos el comadno en partes en este para poder tratar uno y despues el otro.
+            *found_p = '\0';
+            char *c1 = comando;
+            char *c2 = found_p + 1;
+
+            char *a1[1024], *a2[1024];
+            parsear(c1, a1);
+            parsear(c2, a2);
+
+            pipes(a1, a2);
+        }
+        else
+        {
+            parsear(comando, argumentos);
+            ejecuta_comando(argumentos);
+        }
+
+        // parsear(comando, argumentos);
 
         // imprimir_argumentos(argumentos);
-        ejecuta_comando(argumentos);
+        // ejecuta_comando(argumentos);
     }
 
     return 0;
