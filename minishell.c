@@ -262,8 +262,8 @@ void pipes(char **comandos)
             // Parseamos el comando que queremos para despues ejecutarlo
             char *a[1024];
             parsear(comandos[i], a);
-            execvp(a[0], a);
-            // En caso de que el comando no existe
+            // execvp(a[0], a);
+            //  En caso de que el comando no existe
             if (execvp(a[0], a) < 0)
             {
                 printf("No existe ese comando \n");
@@ -274,7 +274,7 @@ void pipes(char **comandos)
         }
         else if (pid < 0) // En caso de no poder crear un hijo exitosamente
         {
-            perror("Error al crear el hijo hijo");
+            perror("Error al crear el hijo");
             exit(1);
         }
     }
@@ -322,40 +322,48 @@ int main()
 
             // Iniciar recordatorio en un hilo
             iniciar_recordatorio(tiempo, mensaje);
+            continue;
         }
         // testear
         if (strncmp(comando, "favs crear", 10) == 0)
         {
             char *ruta = comando + 11;
             crear_archivo_favoritos(ruta);
+            continue;
         }
         else if (strcmp(comando, "favs mostrar") == 0)
         {
             mostrar_favoritos();
+            continue;
         }
         else if (strncmp(comando, "favs eliminar", 13) == 0)
         {
             int num = atoi(comando + 14);
             eliminar_favoritos(num);
+            continue;
         }
         else if (strncmp(comando, "favs buscar", 11) == 0)
         {
             char *substring = comando + 12;
             buscar_comandos(substring);
+            continue;
         }
         else if (strcmp(comando, "favs borrar") == 0)
         {
             borrar_favoritos();
+            continue;
         }
         else if (strncmp(comando, "favs ejecutar", 13) == 0)
         {
             int num = atoi(comando + 14);
             ejecutar_favorito(num);
+            continue;
         }
         else
         {
             agregar_a_favoritos(comando); // Agregar cualquier comando ejecutado a favoritos
             // system(comando);  // Ejecutar el comando en la shell
+            continue;
         }
 
         // Guardar favoritos antes de salir
