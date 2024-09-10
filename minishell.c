@@ -262,19 +262,20 @@ void pipes(char **comandos)
             // Parseamos el comando que queremos para despues ejecutarlo
             char *a[1024];
             parsear(comandos[i], a);
-            // execvp(a[0], a);
-            //  En caso de que el comando no existe
-            if (execvp(a[0], a) < 0)
-            {
-                printf("No existe ese comando \n");
-            }
+
+            execvp(a[0], a);
+            // En caso de que el comando no existe
+            // if (execvp(a[0], a) < 0)
+            // {
+            //     printf("No existe ese comando \n");
+            // }
             // Si pasa hubo un error en el comando
             // perror("Error al ejecutar el comando \n");
             // exit(1);
         }
         else if (pid < 0) // En caso de no poder crear un hijo exitosamente
         {
-            perror("Error al crear el hijo");
+            perror("Error al crear el hijo hijo");
             exit(1);
         }
     }
@@ -363,7 +364,6 @@ int main()
         {
             agregar_a_favoritos(comando); // Agregar cualquier comando ejecutado a favoritos
             // system(comando);  // Ejecutar el comando en la shell
-            continue;
         }
 
         // Guardar favoritos antes de salir
